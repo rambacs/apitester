@@ -41,7 +41,7 @@ body {
   line-height: 1.5;
 }
 
-.container { max-width: 60rem; margin: 0 auto; }
+.container { max-width: 64rem; margin: 0 auto; }
 
 .grid { display: grid; gap: 1.5rem; }
 @media (min-width: 768px) { .grid { grid-template-columns: 2fr 1fr; } }
