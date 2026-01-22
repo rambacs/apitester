@@ -250,7 +250,7 @@
       const id = document.getElementById('taskId').value;
       const desc = document.getElementById('taskDesc').value;
       const status = document.getElementById('taskStatus').value;
-      const url = id ? `/task/${id}` : '/task';
+      const url = id ? `/tasks/${id}` : '/tasks';
       const method = id ? 'PUT' : 'POST';
       try {
         const r = await fetch(url, {
@@ -265,7 +265,7 @@
     async function deleteTask(id) {
       if (!confirm('Delete this task?')) return;
       try {
-        const r = await fetch(`/task/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+        const r = await fetch(`/tasks/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
         if (r.ok) { loadTasks(); setScreen('Task deleted'); }
       } catch { setScreen('Error deleting task'); }
     }
