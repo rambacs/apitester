@@ -1,60 +1,314 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Testing App</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🧪 API Testing App</h1>
+      <p class="subtitle">Task management for API testing practice</p>
+      
+      <div class="header-controls">
+        <div class="user-info">
+          <span id="userDisplay">Not logged in</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+          <button id="loginBtn" class="btn btn-primary btn-small" onclick="showModal('loginModal')">Login</button>
+          <button id="logoutBtn" class="btn btn-secondary btn-small" onclick="logout()" style="display: none;">Logout</button>
+        </div>
+      </div>
 
-{% block content %}
+      <div class="tasks-header">
+        <h2>Tasks</h2>
+        <button class="btn btn-primary btn-small" onclick="showModal('taskModal')">+ Add Task</button>
+      </div>
 
- <!-- Button to open the modal login form -->
- <div class="loginbutton">
-    <button onclick="document.getElementById('id01').style.display='block'">Login</button>
-    <button id ="logout">Logout</button>
-    <div id="username_label">Username:</div>
-
-</div>
-<!-- The Modal -->
-<div id="id01" class="modal" postition="absolute">
-  <span onclick="document.getElementById('id01').style.display='none'"
-   class="close" title="Close Modal">&times;</span>
-
-  <!-- Modal Content -->
-  <form class="modal-content animate" onsubmit="return false">
-
-    <div class="container">
-      <label for="uname"><b>Username</b></label>
-      <input type="text" placeholder="Enter Username" name="uname" required>
-
-      <label for="psw"><b>Password</b></label>
-      <input type="password" placeholder="Enter Password" name="psw" required>
-
-      <button id="login" type="submit">Login</button>
+      <div id="taskList">
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Status</th>
+              <th style="width: 100px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody">
+            <!-- Tasks loaded via JS -->
+          </tbody>
+        </table>
+        <div id="emptyState" class="empty-state" style="display: none;">
+          No tasks yet. Add one to get started!
+        </div>
+      </div>
     </div>
 
-    <div class="container" style="background-color:#f1f1f1">
-      <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn">Cancel</button>
+    <p class="footer">Built for API testing practice • <a href="/docs" style="color: inherit;">API Docs</a></p>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal">
+      <h3>Login</h3>
+      <form onsubmit="login(event)">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div id="loginError" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Login</button>
+          <button type="button" class="btn btn-secondary" onclick="hideModal('loginModal')">Cancel</button>
+        </div>
+      </form>
     </div>
-  </form>
-</div>
+  </div>
 
-<form>
-    <textarea id="task-description" name="task" rows="5" placeholder="Enter your task"></textarea>
-    <button id="create-task" type="button">Add</button>
-</form>
+  <!-- Add/Edit Task Modal -->
+  <div id="taskModal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="taskModalTitle">Add Task</h3>
+      <form onsubmit="saveTask(event)">
+        <input type="hidden" id="taskId">
+        <div class="form-group">
+          <label for="taskDescription">Description</label>
+          <input type="text" id="taskDescription" name="description" required>
+        </div>
+        <div class="form-group">
+          <label for="taskStatus">Status</label>
+          <select id="taskStatus" name="status">
+            <option value="Draft">Draft</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Complete">Complete</option>
+          </select>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-secondary" onclick="hideModal('taskModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-<br>
-<div>
-    <h2>Tasks</h2>
-</div>
+  <script>
+    let token = localStorage.getItem('token');
+    let currentUser = localStorage.getItem('username');
 
-<!-- Link JavaScript file -->
-<script src="static/main.js"></script>
+    // Theme
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.querySelector('.theme-toggle');
+      if (html.dataset.theme === 'dark') {
+        html.dataset.theme = 'light';
+        btn.textContent = '🌙 Dark';
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.dataset.theme = 'dark';
+        btn.textContent = '☀️ Light';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
 
-<table id="tasks">
-    <thead>
-        <tr>
-            <th>Description</th>
-            <th>Status</th>
-            <th></th>
-        </tr>
-    </thead>
-   
-</table>
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+      document.querySelector('.theme-toggle').textContent = '☀️ Light';
+    }
 
-{% endblock content %}
+    // Modals
+    function showModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('active');
+      if (id === 'taskModal') {
+        document.getElementById('taskId').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('taskStatus').value = 'Draft';
+        document.getElementById('taskModalTitle').textContent = 'Add Task';
+      }
+    }
+
+    // Auth
+    function updateAuthUI() {
+      const userDisplay = document.getElementById('userDisplay');
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      if (token && currentUser) {
+        userDisplay.innerHTML = 'Logged in as <strong>' + currentUser + '</strong>';
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+      } else {
+        userDisplay.textContent = 'Not logged in';
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+      }
+    }
+
+    async function login(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('loginError');
+      
+      try {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        const res = await fetch('/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData
+        });
+        
+        if (!res.ok) {
+          errorEl.textContent = 'Invalid username or password';
+          errorEl.style.display = 'block';
+          return;
+        }
+        
+        const data = await res.json();
+        token = data.access_token;
+        currentUser = username;
+        localStorage.setItem('token', token);
+        localStorage.setItem('username', username);
+        
+        hideModal('loginModal');
+        errorEl.style.display = 'none';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        updateAuthUI();
+        loadTasks();
+      } catch (err) {
+        errorEl.textContent = 'Login failed. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    }
+
+    function logout() {
+      token = null;
+      currentUser = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      updateAuthUI();
+      loadTasks();
+    }
+
+    // Tasks
+    async function loadTasks() {
+      try {
+        const res = await fetch('/tasks');
+        const tasks = await res.json();
+        const tbody = document.getElementById('taskTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const table = tbody.closest('table');
+        
+        if (tasks.length === 0) {
+          table.style.display = 'none';
+          emptyState.style.display = 'block';
+          return;
+        }
+        
+        table.style.display = 'table';
+        emptyState.style.display = 'none';
+        
+        tbody.innerHTML = tasks.map(task => `
+          <tr>
+            <td>${escapeHtml(task.description)}</td>
+            <td><span class="status status-${task.status.toLowerCase().replace(' ', '-')}">${task.status}</span></td>
+            <td>
+              ${token ? `
+                <button class="btn btn-secondary btn-small" onclick="editTask(${task.id}, '${escapeHtml(task.description)}', '${task.status}')">Edit</button>
+                <button class="btn btn-danger btn-small" onclick="deleteTask(${task.id})">×</button>
+              ` : ''}
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load tasks:', err);
+      }
+    }
+
+    function editTask(id, description, status) {
+      document.getElementById('taskId').value = id;
+      document.getElementById('taskDescription').value = description;
+      document.getElementById('taskStatus').value = status;
+      document.getElementById('taskModalTitle').textContent = 'Edit Task';
+      showModal('taskModal');
+    }
+
+    async function saveTask(e) {
+      e.preventDefault();
+      if (!token) {
+        alert('Please login first');
+        return;
+      }
+      
+      const id = document.getElementById('taskId').value;
+      const description = document.getElementById('taskDescription').value;
+      const status = document.getElementById('taskStatus').value;
+      
+      const url = id ? `/task/${id}` : '/task';
+      const method = id ? 'PUT' : 'POST';
+      
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ description, status })
+        });
+        
+        if (res.ok) {
+          hideModal('taskModal');
+          loadTasks();
+        } else {
+          alert('Failed to save task');
+        }
+      } catch (err) {
+        alert('Error saving task');
+      }
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Delete this task?')) return;
+      
+      try {
+        const res = await fetch(`/task/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+          loadTasks();
+        }
+      } catch (err) {
+        alert('Error deleting task');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    updateAuthUI();
+    loadTasks();
+  </script>
+</body>
+</html>
