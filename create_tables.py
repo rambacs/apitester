@@ -26,6 +26,7 @@ class Task(Base):
 
     description: Mapped[str]
     status: Mapped[Status]
+    created_by: Mapped[Optional[str]]
 
 
 class User(Base):
